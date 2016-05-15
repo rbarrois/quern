@@ -13,7 +13,7 @@ Usage::
 Configuration
 -------------
 
-Quern uses `http://getconf.readthedocs.io/ <getconf>`_ to read its configuration.
+Quern uses `getconf <http://getconf.readthedocs.io/>`_ to read its configuration.
 All options can be set as environment variables or configuration file entries.
 
 The available options are:
