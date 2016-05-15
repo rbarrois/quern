@@ -10,12 +10,24 @@ from . import core
 def main(argv=sys.argv):
     core.setup_logging()
 
-    config_files = ['/etc/quern.conf']
-    if len(argv) > 1 and not argv[1].startswith('-'):
-        config_files.append(argv[1])
+    display_help = False
+    if len(argv) == 1 or argv[1] in ('-h', '--help'):
+        display_help = True
+        config_files = []
+
+    else:
+        config_files = argv[1:]
 
     getter = getconf.ConfigGetter('quern', config_files)
     config = core.Config(getter)
+
+    if display_help:
+        # Help requested
+        print("Usage: %s path/to/example.conf" % argv[0])
+        print("\nExample configuration file:\n\n")
+        print(getter.get_ini_template())
+        return
+
     config.check()
 
     driver = drivers.load(config.driver, config)
