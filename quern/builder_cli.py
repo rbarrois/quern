@@ -3,8 +3,9 @@
 import getconf
 import sys
 
-from . import drivers
 from . import core
+from . import drivers
+from . import postbuild
 
 
 def main(argv=sys.argv):
@@ -34,6 +35,10 @@ def main(argv=sys.argv):
 
     driver.setup()
     driver.build()
+
+    for engine_name in config.postbuild_engines:
+        engine = postbuild.load(engine_name, config)
+        engine.run()
 
 
 if __name__ == '__main__':

@@ -69,7 +69,7 @@ class Driver(base.BaseDriver):
         logger.info("Removing container")
         client.remove_container(container=container_id, v=True)
 
-        logger.info("Build complete, image is available in %s", self.config.outdir)
+        logger.info("Build complete, image is available at %s", self.config.image_path)
 
     def _make_host_config(self, ro_volumes, rw_volumes):
         binds = {}
@@ -98,6 +98,7 @@ class Driver(base.BaseDriver):
             'portage.autofix': True,
             'portage.repositories': ', '.join(self.repository_map.values()),
             'build.outdir': os.path.join(self.PREFIX, 'image'),
+            'build.image_name': self.config.image_name,
             'portage.binpkg': os.path.join(self.PREFIX, 'binpkg') if self.config.binpkg_dir else '',
             'portage.distfiles': os.path.join(self.PREFIX, 'distfiles') if self.config.distfiles_dir else '',
         }
