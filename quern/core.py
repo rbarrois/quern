@@ -19,6 +19,7 @@ def setup_logging():
         level=logging.INFO,
         format='>>> %(levelname)s: %(message)s',
     )
+    logging.getLogger('getconf').setLevel(logging.WARNING)
 
 
 class Config:
