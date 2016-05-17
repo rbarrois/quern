@@ -79,6 +79,7 @@ The profile configuration is rather simple, even if split over a few files:
 With the following configuration file:
 
 .. code-block:: ini
+
     [portage]
     ; Load main portage tree + our overlays
     repositories = /home/user/dev/portage, /home/user/dev/musl-overlay, /home/user/dev/test-overlay
