@@ -52,6 +52,12 @@ class Driver(base.BaseDriver):
             for line in self.config.make_conf_lines():
                 f.write(line + '\n')
 
+        host_make_conf = '/etc/portage/make.conf'
+        with open(host_make_conf, 'a', encoding='UTF-8') as f:
+            f.write("# QUERN OVERRIDES\n")
+            for line in self.config.host_make_conf_lines():
+                f.write(line + '\n')
+
         logger.info("Configuring build repositories")
         repos_conf = os.path.join(self.config.workdir_portage, 'repos.conf')
         os.makedirs(repos_conf, exist_ok=True)

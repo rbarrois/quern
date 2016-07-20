@@ -161,4 +161,8 @@ class Config:
             yield extendline('FEATURES', "buildpkg")
             yield extendline('EMERGE_DEFAULT_OPTS', '--usepkg')
 
+    def host_make_conf_lines(self):
+        def varline(var, value):
+            return '{var}="{value}"'.format(var=var, value=value)
 
+        yield varline('DISTDIR', self.distfiles_dir)
