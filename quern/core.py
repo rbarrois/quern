@@ -33,10 +33,11 @@ class Config:
             doc="Comma-separated paths of portage repositories; defaults to /usr/portage")
         self.binhost = getter.getstr('portage.binhost',
             doc="Space-separated list of binary package hosts")
-        self.distfiles_dir = getter.getstr('portage.disftiles',
+        self.distfiles_dir = getter.getstr('portage.distfiles',
             doc="Path to distfiles")
         self.binpkg_dir = getter.getstr('portage.binpkg', doc="Path where binpkgs should be written")
         self.autofix_portage = getter.getbool('portage.autofix', False, doc="Point system /usr/portage at main repository")
+        self.debug_workdir = getter.getstr('portage.debug_workdir', doc="Store failed build workspaces")
 
         # Build profile
         self.profile = getter.getstr('build.profile', doc="Portage profile to use")

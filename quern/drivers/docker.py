@@ -25,6 +25,8 @@ class Driver(base.BaseDriver):
             rw_volumes[self.config.binpkg_dir] = self.INNER_BINPKG
         if self.config.distfiles_dir:
             rw_volumes[self.config.distfiles_dir] = self.INNER_DISTFILES
+        if self.config.debug_workdir:
+            rw_volumes[self.config.debug_workdir] = self.INNER_PORTAGE_WORKDIR
 
         env = self._make_runner_env()
 
