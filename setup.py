@@ -49,6 +49,11 @@ setup(
     setup_requires=[
         'setuptools>=0.8',
     ],
+    extras_requires={
+        'docker': [
+            'docker-py>=1.6,<2',
+        ],
+    },
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Console",
