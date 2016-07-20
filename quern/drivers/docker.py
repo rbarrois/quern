@@ -47,7 +47,7 @@ class Driver(base.BaseDriver):
         logger.info("Host config: %r", host_config)
         container = client.create_container(
             image=base_image,
-            entrypoint=['/usr/bin/quern-builder'],
+            entrypoint=['/usr/bin/quern-builder', '/etc/quern.conf'],
             environment=env,
             volumes=list(ro_volumes.values()) + list(rw_volumes.values()),
             name=container_name,
