@@ -91,6 +91,7 @@ class Driver(base.BaseDriver):
             # Coming from the host
             'portage.binhost': self.config.binhost,
             'build.profile': self.config.profile,
+            'build.stage1_atoms': ', '.join(self.config.stage1_atoms),
             'emerge.jobs': self.config.emerge_jobs,
             'strip.doc': self.config.strip,
             'strip.paths': ', '.join(self.config.strip_folders),

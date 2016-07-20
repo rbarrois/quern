@@ -41,6 +41,7 @@ class Config:
 
         # Build profile
         self.profile = getter.getstr('build.profile', doc="Portage profile to use")
+        self.stage1_atoms = getter.getlist('build.stage1_atoms', "sys-apps/baselayout", doc="Atoms to install before @profile")
         self.outdir = getter.getstr('build.outdir', doc="Folder where the generated will be written")
         self.forced_image_name = getter.getstr('build.image_name', doc="Force generated image name (with .tar.gz suffix)")
 

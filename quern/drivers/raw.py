@@ -75,6 +75,12 @@ class Driver(base.BaseDriver):
 
     def build(self):
         logger.info("Starting compilation")
+
+        if self.config.stage1_atoms:
+            logger.info("Building stage 1 atoms: %s", ', '.join(self.config.stage1_atoms))
+            run_command(['emerge', '--jobs=1'] + self.config.stage1_atoms, PORTAGE_CONFIGROOT=self.config.workdir)
+
+        logger.info("Building @profile packages")
         run_command(['emerge', '@profile'], PORTAGE_CONFIGROOT=self.config.workdir)
         for d in self.config.strip_folders:
             folder = os.path.join(self.config.workdir_image, d.lstrip('/'))
