@@ -100,10 +100,12 @@ class Config:
         self.debug_workdir = getter.getstr('portage.debug_workdir', doc="Store failed build workspaces")
 
         # Build profile
+        self.unblocker_profile = getter.getstr('build.unblocker_profile', doc="Portage profile to break blockers (merged to host)")
         self.profile = getter.getstr('build.profile', doc="Portage profile to use")
-        self.stage1_atoms = getter.getlist('build.stage1_atoms', "sys-apps/baselayout", doc="Atoms to install before @profile")
+        self.baselayout_atoms = getter.getlist('build.baselayout_atoms', "sys-apps/baselayout", doc="Atoms to install to the image before any other package")
         self.outdir = getter.getstr('build.outdir', doc="Folder where the generated will be written")
         self.forced_image_name = getter.getstr('build.image_name', doc="Force generated image name (with .tar.gz suffix)")
+        self.keep_failed = getter.getbool('build.keep_failed', True, doc="Keep build environment of failed builds")
 
         # Emerge configuration
         self.emerge_jobs = getter.getint('emerge.jobs', doc="Parallel portage builds")
@@ -175,8 +177,12 @@ class Config:
         return os.path.join(self.workdir, 'image')
 
     @property
-    def workdir_portage(self):
-        return os.path.join(self.workdir, 'etc', 'portage')
+    def portage_configroot(self):
+        return os.path.join('/', 'etc', 'portage')
+
+    @property
+    def portage_configroot_backup(self):
+        return '%s.quern-backup-%s' % (self.portage_configroot, self.now.isoformat())
 
     @property
     def image_name(self):
@@ -221,6 +227,8 @@ class Config:
             yield extendline('EMERGE_DEFAULT_OPTS', "--jobs=%d" % self.emerge_jobs)
         if self.emerge_ask:
             yield extendline('EMERGE_DEFAULT_OPTS', '--ask')
+        yield extendline('EMERGE_DEFAULT_OPTS', '--tree')
+        yield extendline('EMERGE_DEFAULT_OPTS', '--verbose-conflicts')
 
         if self.strip:
             yield extendline('FEATURES', "nodoc noinfo noman")
@@ -229,10 +237,11 @@ class Config:
             yield extendline('FEATURES', "getbinpkg")
         if self.binpkg_dir:
             yield extendline('FEATURES', "buildpkg")
+            yield extendline('FEATURES', "binpkg-multi-instance")
             yield extendline('EMERGE_DEFAULT_OPTS', '--usepkg')
+            yield extendline('EMERGE_DEFAULT_OPTS', '--binpkg-respect-use=y')
+            yield extendline('EMERGE_DEFAULT_OPTS', '--binpkg-changed-deps=y')
 
-    def host_make_conf_lines(self):
-        def varline(var, value):
-            return '{var}="{value}"'.format(var=var, value=value)
-
-        yield varline('DISTDIR', self.distfiles_dir)
+        # Ensure build-time deps are updated as well
+        yield extendline('EMERGE_DEFAULT_OPTS', '--changed-deps=y')
+        yield extendline('EMERGE_DEFAULT_OPTS', '--with-bdeps=y')

@@ -13,9 +13,9 @@ logger = logging.getLogger('quern')
 class Driver(base.BaseDriver):
 
     def setup(self):
-        for repo_path in self.config.repositories:
-            if not os.path.isdir(repo_path):
-                raise core.ImproperlyConfigured("Missing repository at %s" % repo_path)
+        for repo in self.config.repositories:
+            if not os.path.isdir(repo.location):
+                raise core.ImproperlyConfigured("Missing repository at %s" % repo.location)
 
     def build(self):
         ro_volumes = self.repository_map.copy()
@@ -90,13 +90,15 @@ class Driver(base.BaseDriver):
         env = {
             # Coming from the host
             'portage.binhost': self.config.binhost,
+            'build.unblocker_profile': self.config.unblocker_profile,
             'build.profile': self.config.profile,
-            'build.stage1_atoms': ', '.join(self.config.stage1_atoms),
+            'build.baselayout_atoms': ', '.join(self.config.baselayout_atoms),
             'emerge.jobs': self.config.emerge_jobs,
             'strip.doc': self.config.strip,
             'strip.paths': ', '.join(self.config.strip_folders),
 
             # Forced for our setup
+            # Build
             'build.driver': 'raw',
             'build.outdir': os.path.join(self.PREFIX, 'image'),
             'build.image_name': self.config.image_name,

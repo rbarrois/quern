@@ -44,18 +44,19 @@ class Driver(base.BaseDriver):
                 os.symlink(main_repo.location, expected_path)
 
     def setup(self):
-        logger.info("Configuring build portage at %s", self.config.workdir_portage)
-        os.makedirs(self.config.workdir_portage, exist_ok=True)
+        if os.path.exists(self.config.portage_configroot):
+            logger.info("Existing portage configuration found at %s, moving to %s",
+                    self.config.portage_configroot,
+                    self.config.portage_configroot_backup,
+            )
+            os.rename(self.config.portage_configroot, self.config.portage_configroot_backup)
 
-        make_conf = os.path.join(self.config.workdir_portage, 'make.conf')
+        logger.info("Configuring build portage at %s", self.config.portage_configroot)
+        os.makedirs(self.config.portage_configroot, exist_ok=True)
+
+        make_conf = os.path.join(self.config.portage_configroot, 'make.conf')
         with open(make_conf, 'w', encoding='UTF-8') as f:
             for line in self.config.make_conf_lines():
-                f.write(line + '\n')
-
-        host_make_conf = '/etc/portage/make.conf'
-        with open(host_make_conf, 'a', encoding='UTF-8') as f:
-            f.write("# QUERN OVERRIDES\n")
-            for line in self.config.host_make_conf_lines():
                 f.write(line + '\n')
 
         logger.info("Configuring build repositories")
@@ -68,27 +69,27 @@ class Driver(base.BaseDriver):
     def build(self):
         logger.info("Starting compilation")
 
-            with open(os.path.join(repos_conf, '%s.conf' % repo_name), 'w', encoding='UTF-8') as f:
-                if i == 0:
-                    # First repository
-                    f.write("[DEFAULT]\nmain-repo = {name}\n\n".format(name=repo_name))
-                    # Fix portage, maybe
-                    self._fix_portage(repo_name, repo_path)
+        if self.config.unblocker_profile:
+            # Specific profile that helps fixing USE conflicts (e.g when USE flags
+            # trigger circular dependencies on the builder system)
+            logger.info("Breaking host blocks: using profile %s", self.config.unblocker_profile)
+            run_command(['eselect', 'profile', 'set', self.config.unblocker_profile])
 
-                f.write("[{name}]\nlocation = {path}".format(name=repo_name, path=repo_path))
+            logger.info("Merging unblocking packages to main system")
+            run_command(['emerge', '--oneshot', '--newuse', '@world'], ROOT='/')
 
         logger.info("Enabling profile %s", self.config.profile)
-        run_command(['eselect', 'profile', 'set', self.config.profile], PORTAGE_CONFIGROOT=self.config.workdir)
+        run_command(['eselect', 'profile', 'set', self.config.profile])
 
-    def build(self):
-        logger.info("Starting compilation")
-
-        if self.config.stage1_atoms:
-            logger.info("Building stage 1 atoms: %s", ', '.join(self.config.stage1_atoms))
-            run_command(['emerge', '--jobs=1'] + self.config.stage1_atoms, PORTAGE_CONFIGROOT=self.config.workdir)
+        if self.config.baselayout_atoms:
+            # Merge baselayout atoms first - they should setup common system files
+            logger.info("Building baselayout atoms: %s", ', '.join(self.config.baselayout_atoms))
+            run_command(['emerge', '--jobs=1'] + self.config.baselayout_atoms)
 
         logger.info("Building @profile packages")
-        run_command(['emerge', '@profile'], PORTAGE_CONFIGROOT=self.config.workdir)
+        run_command(['emerge', '@profile'])
+
+        # Cleanup
         for d in self.config.strip_folders:
             folder = os.path.join(self.config.workdir_image, d.lstrip('/'))
             logger.info("Pruning %s", folder)
