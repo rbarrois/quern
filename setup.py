@@ -49,7 +49,7 @@ setup(
     setup_requires=[
         'setuptools>=0.8',
     ],
-    extras_requires={
+    extras_require={
         'docker': [
             'docker-py>=1.6,<2',
         ],
