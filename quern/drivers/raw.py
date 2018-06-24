@@ -49,7 +49,7 @@ class Driver(base.BaseDriver):
                     self.config.portage_configroot,
                     self.config.portage_configroot_backup,
             )
-            os.rename(self.config.portage_configroot, self.config.portage_configroot_backup)
+            shutil.move(self.config.portage_configroot, self.config.portage_configroot_backup)
 
         logger.info("Configuring build portage at %s", self.config.portage_configroot)
         os.makedirs(self.config.portage_configroot, exist_ok=True)
