@@ -8,6 +8,9 @@ from . import drivers
 from . import postbuild
 
 
+NAMESPACE = 'quern'
+
+
 def main(argv=sys.argv):
     core.setup_logging()
 
@@ -19,8 +22,8 @@ def main(argv=sys.argv):
     else:
         config_files = argv[1:]
 
-    getter = getconf.ConfigGetter('quern', config_files)
-    config = core.Config(getter)
+    getter = getconf.ConfigGetter(NAMESPACE, config_files)
+    config = core.Config(getter, NAMESPACE)
 
     if display_help:
         # Help requested

@@ -24,8 +24,8 @@ def setup_logging():
 
 class Config:
 
-    def __init__(self, getter):
-        self.getconf_namespace = getter.namespace
+    def __init__(self, getter, namespace):
+        self.getconf_namespace = namespace
         self.now = datetime.datetime.utcnow()
 
         # Portage setup
