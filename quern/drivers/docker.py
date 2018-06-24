@@ -54,7 +54,11 @@ class Driver(base.BaseDriver):
             rw_volumes=rw_volumes,
             tmpfs_volumes=tmpfs_volumes,
         ))
-        logger.info("Host config: %r", host_config)
+        logger.info("Container config: %r", host_config)
+
+        env = self._make_runner_env()
+        logger.info("Container environment: %s", '  '.join('%s=%r' % (k, v) for (k, v) in sorted(env.items())))
+
         container = client.create_container(
             image=base_image,
             entrypoint=['/usr/bin/quern-builder', '/etc/quern.conf'],
@@ -76,12 +80,21 @@ class Driver(base.BaseDriver):
             logger.info("  logs: %s", log.decode('utf-8').strip())
 
         logger.info("Waiting for container to disappear")
-        client.wait(container=container_id)
+        retcode = client.wait(container=container_id)
+
+        if retcode:
+            logger.error("Container exited with code %d", retcode)
+
+            if self.config.keep_failed:
+                logger.info("Failed container kept: id=%s, name=%s", container_id, container_name)
+                logger.info("Container environment: %s", '  '.join('%s=%r' % (k, v) for (k, v) in sorted(env.items())))
+                return
 
         logger.info("Removing container")
         client.remove_container(container=container_id, v=True)
 
-        logger.info("Build complete, image is available at %s", self.config.image_path)
+        if retcode == 0:
+            logger.info("Build complete, image is available at %s", self.config.image_path)
 
     def _make_host_config(self, ro_volumes, rw_volumes, tmpfs_volumes):
         binds = {}
