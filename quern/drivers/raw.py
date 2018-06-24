@@ -76,7 +76,7 @@ class Driver(base.BaseDriver):
             run_command(['eselect', 'profile', 'set', self.config.unblocker_profile])
 
             logger.info("Merging unblocking packages to main system")
-            run_command(['emerge', '--oneshot', '--newuse', '@world'], ROOT='/')
+            run_command(['emerge', '--oneshot', '--newuse', '--update', '@world'], ROOT='/')
 
         logger.info("Enabling profile %s", self.config.profile)
         run_command(['eselect', 'profile', 'set', self.config.profile])
