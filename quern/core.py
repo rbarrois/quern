@@ -1,5 +1,7 @@
+import collections
 import datetime
 import logging
+import re
 import os.path
 
 
@@ -22,6 +24,47 @@ def setup_logging():
     logging.getLogger('getconf').setLevel(logging.WARNING)
 
 
+_RepositoryConfig = collections.namedtuple(
+    'RepositoryConfig',
+    ['name', 'location', 'eclass_overrides', 'masters', 'priority'],
+)
+
+
+class RepositoryConfig(_RepositoryConfig):
+    @classmethod
+    def from_section(cls, name, config):
+        section = config.get_section('repository:%s' % name)
+        return cls(
+            name=name,
+            location=section['location'],
+            eclass_overrides=section['eclass-overrides'],
+            masters=section['masters'],
+            priority=section['priority'],
+        )
+
+    def as_repos_conf_dict(self):
+        return {
+            'location': self.location,
+            'eclass-overrides': self.eclass_overrides,
+            'masters': self.masters,
+            'priority': self.priority,
+        }
+
+    def as_repos_conf_lines(self):
+        def make_line(option_name, value):
+            if value:
+                return '{} = {}'.format(option_name, value)
+            else:
+                return '# {} ='.format(option_name)
+
+        return [
+            '[{}]'.format(self.name),
+        ] + [
+            make_line(option, value)
+            for option, value in self.as_repos_conf_dict().items()
+        ]
+
+
 class Config:
 
     def __init__(self, getter, namespace):
@@ -29,8 +72,25 @@ class Config:
         self.now = datetime.datetime.utcnow()
 
         # Portage setup
-        self.repositories = getter.getlist('portage.repositories',
-            doc="Comma-separated paths of portage repositories; defaults to /usr/portage")
+        repo_names = getter.getlist('portage.repositories',
+            doc="Comma-separated list of repository:xxx sections to load")
+
+        if repo_names:
+            self.repositories = [
+                RepositoryConfig.from_section(repo_name, getter)
+                for repo_name in repo_names
+            ]
+        else:
+            self.repositories = [
+                RepositoryConfig(
+                    name='gentoo',
+                    location='/usr/portage',
+                    eclass_overrides='',
+                    masters='',
+                    priority='',
+                ),
+            ]
+
         self.binhost = getter.getstr('portage.binhost',
             doc="Space-separated list of binary package hosts")
         self.distfiles_dir = getter.getstr('portage.distfiles',
@@ -130,6 +190,16 @@ class Config:
     @property
     def image_path(self):
         return os.path.join(self.outdir, self.image_name)
+
+    def make_repos_conf_lines(self):
+        """Generate the lines for /etc/portage/repos.conf."""
+        for i, repo in enumerate(self.repositories):
+            if i == 0:
+                yield '[DEFAULT]'
+                yield 'main-repo = {}'.format(repo.name)
+
+            yield ''
+            yield from repo.as_repos_conf_lines()
 
     def make_conf_lines(self):
         def varline(var, value):

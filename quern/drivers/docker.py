@@ -98,14 +98,29 @@ class Driver(base.BaseDriver):
 
             # Forced for our setup
             'build.driver': 'raw',
-            'portage.autofix': True,
-            'portage.repositories': ', '.join(self.repository_map.values()),
             'build.outdir': os.path.join(self.PREFIX, 'image'),
             'build.image_name': self.config.image_name,
+
+            # Portage
             'portage.binpkg': os.path.join(self.PREFIX, 'binpkg') if self.config.binpkg_dir else '',
             'portage.distfiles': os.path.join(self.PREFIX, 'distfiles') if self.config.distfiles_dir else '',
+            'portage.autofix': True,
         }
 
+        # Add repository sections
+        env['portage.repositories'] = ','.join(repo.name for repo in self.config.repositories)
+        for repo in self.config.repositories:
+            moved_repo = repo._replace(location=self.repository_map[repo.location])
+            fields = moved_repo.as_repos_conf_dict()
+
+            # Strip empty fields
+            fields = {key: value for key, value in fields.items() if value}
+            env.update({
+                'repository:{}.{}'.format(repo.name, field): value
+                for field, value in fields.items()
+            })
+
+        # Build a getconf-compatible environment
         namespace = self.config.getconf_namespace.upper()
         return {
             '{namespace}_{key}'.format(namespace=namespace, key=key.upper().replace('.', '_')): str(value)

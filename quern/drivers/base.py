@@ -15,9 +15,9 @@ class BaseDriver:
     def __init__(self, config):
         self.config = config
         self.repository_map = collections.OrderedDict()
-        for repo_path in self.config.repositories:
-            self.repository_map[repo_path] = os.path.join(
-                    self.INNER_REPOSITORIES, repo_path.strip('/').replace('/', '-'))
+        for repo in self.config.repositories:
+            self.repository_map[repo.location] = os.path.join(
+                    self.INNER_REPOSITORIES, repo.location.strip('/').replace('/', '-'))
 
     def setup(self):
         pass

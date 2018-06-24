@@ -22,7 +22,7 @@ def run_command(args, **environ):
 
 
 class Driver(base.BaseDriver):
-    def _fix_portage(self, main_repo_name, main_repo_path):
+    def _fix_portage(self, main_repo):
         """Fix the portage setup: point /usr/portage at the main repo path."""
         if not self.config.autofix_portage:
             return
@@ -37,11 +37,11 @@ class Driver(base.BaseDriver):
         finally:
             portage.util.noiselimit = old_noiselimit
 
-        if main_repo_name in trees:
-            expected_path = trees[main_repo_name]
+        if main_repo.name in trees:
+            expected_path = trees[main_repo.name]
             if not os.path.isdir(expected_path):
-                logger.info("Fixed main portage: pointing %s at %s", expected_path, main_repo_path)
-                os.symlink(main_repo_path, expected_path)
+                logger.info("Fixed main portage: pointing %s at %s", expected_path, main_repo.location)
+                os.symlink(main_repo.location, expected_path)
 
     def setup(self):
         logger.info("Configuring build portage at %s", self.config.workdir_portage)
@@ -59,13 +59,14 @@ class Driver(base.BaseDriver):
                 f.write(line + '\n')
 
         logger.info("Configuring build repositories")
-        repos_conf = os.path.join(self.config.workdir_portage, 'repos.conf')
-        os.makedirs(repos_conf, exist_ok=True)
-        for i, repo_path in enumerate(self.config.repositories):
+        repos_conf = os.path.join(self.config.portage_configroot, 'repos.conf')
+        with open(repos_conf, 'w', encoding='UTF-8') as f:
+            f.write('\n'.join(self.config.make_repos_conf_lines()))
 
-            logger.info("Configuring repository %s", repo_path)
-            with open(os.path.join(repo_path, 'profiles', 'repo_name'), 'r', encoding='UTF-8') as f:
-                repo_name = f.readline().strip()
+        self._fix_portage(self.config.repositories[0])
+
+    def build(self):
+        logger.info("Starting compilation")
 
             with open(os.path.join(repos_conf, '%s.conf' % repo_name), 'w', encoding='UTF-8') as f:
                 if i == 0:
