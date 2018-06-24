@@ -21,6 +21,8 @@ class Driver(base.BaseDriver):
         ro_volumes = self.repository_map.copy()
         rw_volumes = {}
         rw_volumes[self.config.outdir] = self.INNER_IMAGE
+        tmpfs_volumes = {}
+
         if self.config.binpkg_dir:
             rw_volumes[self.config.binpkg_dir] = self.INNER_BINPKG
         if self.config.distfiles_dir:
@@ -28,7 +30,14 @@ class Driver(base.BaseDriver):
         if self.config.debug_workdir:
             rw_volumes[self.config.debug_workdir] = self.INNER_PORTAGE_WORKDIR
 
-        env = self._make_runner_env()
+        workdir_engine, workdir_param = self.config.docker_workdir_storage.split(':', 1)
+        if workdir_engine == 'tmpfs':
+            # Expected format: tmpfs:200M
+            tmpfs_volumes['/tmp'] = workdir_param
+        else:
+            # Expected format: file:/path/to/host/dir
+            assert workdir_engine == 'file'
+            rw_volumes['/tmp'] = workdir_param
 
         logger.info("Connecting to docker")
         client = docker.Client(self.config.docker_address)
@@ -43,6 +52,7 @@ class Driver(base.BaseDriver):
         host_config = client.create_host_config(**self._make_host_config(
             ro_volumes=ro_volumes,
             rw_volumes=rw_volumes,
+            tmpfs_volumes=tmpfs_volumes,
         ))
         logger.info("Host config: %r", host_config)
         container = client.create_container(
@@ -73,16 +83,23 @@ class Driver(base.BaseDriver):
 
         logger.info("Build complete, image is available at %s", self.config.image_path)
 
-    def _make_host_config(self, ro_volumes, rw_volumes):
+    def _make_host_config(self, ro_volumes, rw_volumes, tmpfs_volumes):
         binds = {}
+        tmpfs = {}
         for host_path, image_path in ro_volumes.items():
             binds[host_path] = {'bind': image_path, 'mode': 'ro'}
         for host_path, image_path in rw_volumes.items():
             binds[host_path] = {'bind': image_path, 'mode': 'rw'}
+        for mountpoint, size in tmpfs_volumes.items():
+            tmpfs[mountpoint] = 'size=%s' % size
 
         return {
             'binds': binds,
-            'tmpfs': {'/tmp': 'size=200M'},
+            'tmpfs': tmpfs,
+
+            # Enable 'ptrace' capability, used by portage's sandbox.
+            'cap_add': ['SYS_PTRACE'],
+            'security_opt': ['apparmor:unconfined', 'seccomp:unconfined'],
         }
 
     def _make_runner_env(self):

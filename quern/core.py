@@ -122,6 +122,11 @@ class Config:
         # Docker driver configuration
         self.docker_image = getter.getstr('docker.image', doc="Docker base image for building")
         self.docker_address = getter.getstr('docker.daemon', 'unix://var/run/docker.sock', doc="Address of docker daemon")
+        self.docker_workdir_storage = getter.getstr(
+            'docker.workdir_storage',
+            'tmpfs:200M',
+            doc="Backing storage for the working dir; tmpfs:xxM or file:/path/to/folder",
+        )
 
         # Post-generation
         self.postbuild_engines = getter.getlist('postbuild.engines', doc="Engines for post-generation tasks")
@@ -156,6 +161,12 @@ class Config:
         if self.driver == 'docker':
             if not self.docker_image:
                 raise ImproperlyConfigured("docker.image is not set, but using the docker driver")
+
+            if not re.match(r'^(tmpfs:\d+[MG]|file:/.*)$', self.docker_workdir_storage):
+                raise ImproperlyConfigured(
+                    "docker.workdir_storage should be either tmpfs:xxxM or file:/path/to/file; got %s"
+                    % self.docker_workdir_storage,
+                )
 
         if 'docker' in self.postbuild_engines:
             if not self.dockergen_name:
