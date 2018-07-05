@@ -123,6 +123,7 @@ class Driver(base.BaseDriver):
             'build.unblocker_profile': self.config.unblocker_profile,
             'build.profile': self.config.profile,
             'build.baselayout_atoms': ', '.join(self.config.baselayout_atoms),
+            'build.include_system': self.config.include_system,
             'emerge.jobs': self.config.emerge_jobs,
             'strip.doc': self.config.strip,
             'strip.paths': ', '.join(self.config.strip_folders),

@@ -102,6 +102,7 @@ class Config:
         # Build profile
         self.unblocker_profile = getter.getstr('build.unblocker_profile', doc="Portage profile to break blockers (merged to host)")
         self.profile = getter.getstr('build.profile', doc="Portage profile to use")
+        self.include_system = getter.getbool('build.include_system', False, doc="Include @system set in built image")
         self.baselayout_atoms = getter.getlist('build.baselayout_atoms', "sys-apps/baselayout", doc="Atoms to install to the image before any other package")
         self.outdir = getter.getstr('build.outdir', doc="Folder where the generated will be written")
         self.forced_image_name = getter.getstr('build.image_name', doc="Force generated image name (with .tar.gz suffix)")

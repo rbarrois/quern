@@ -86,6 +86,10 @@ class Driver(base.BaseDriver):
             logger.info("Building baselayout atoms: %s", ', '.join(self.config.baselayout_atoms))
             run_command(['emerge', '--jobs=1'] + self.config.baselayout_atoms)
 
+        if self.config.include_system:
+            logger.info("Building @system packages")
+            run_command(['emerge', '@system'])
+
         logger.info("Building @profile packages")
         run_command(['emerge', '@profile'])
 
