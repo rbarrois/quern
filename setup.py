@@ -54,6 +54,7 @@ setup(
             'docker-py>=1.6,<2',
         ],
     },
+    zip_safe=False,
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Console",
