@@ -269,6 +269,7 @@ class Config:
 
         if self.binhost:
             yield extendline('FEATURES', "getbinpkg")
+            yield extendline('FEATURES', "parallel-install")
         if self.binpkg_dir:
             yield extendline('FEATURES', "buildpkg")
             yield extendline('FEATURES', "binpkg-multi-instance")
