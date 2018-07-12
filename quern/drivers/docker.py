@@ -33,11 +33,11 @@ class Driver(base.BaseDriver):
         workdir_engine, workdir_param = self.config.docker_workdir_storage.split(':', 1)
         if workdir_engine == 'tmpfs':
             # Expected format: tmpfs:200M
-            tmpfs_volumes['/tmp'] = workdir_param
+            tmpfs_volumes[self.config.workdir] = workdir_param
         else:
             # Expected format: file:/path/to/host/dir
             assert workdir_engine == 'file'
-            rw_volumes['/tmp'] = workdir_param
+            rw_volumes[workdir_param] = self.config.workdir
 
         logger.info("Connecting to docker")
         client = docker.Client(self.config.docker_address)
