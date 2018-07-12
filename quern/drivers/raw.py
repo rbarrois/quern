@@ -21,6 +21,12 @@ def run_command(args, **environ):
     return subprocess.check_call(args, env=env)
 
 
+COMPRESSION_TAR_OPTIONS = {
+    'gzip': '--gzip',
+    'bzip2': '--bzip2',
+}
+
+
 class Driver(base.BaseDriver):
     def _fix_portage(self, main_repo):
         """Fix the portage setup: point /usr/portage at the main repo path."""
@@ -100,6 +106,15 @@ class Driver(base.BaseDriver):
             shutil.rmtree(folder)
 
         logger.info("Collecting image at %s", self.config.image_path)
-        run_command(['tar', '--directory', self.config.workdir_image, '--create', '--gzip', '--file', self.config.image_path, '.'])
+        run_command([
+            'tar',
+            '--directory',
+            self.config.workdir_image,
+            '--create',
+            COMPRESSION_TAR_OPTIONS[self.config.image_compression],
+            '--file',
+            self.config.image_path,
+            '.',
+        ])
 
         logger.info("Done")

@@ -30,6 +30,12 @@ _RepositoryConfig = collections.namedtuple(
 )
 
 
+COMPRESSION_SUFFIXES = {
+    'gzip': 'gz',
+    'bzip2': 'bz2',
+}
+
+
 class RepositoryConfig(_RepositoryConfig):
     @classmethod
     def from_section(cls, name, config):
@@ -105,8 +111,9 @@ class Config:
         self.include_system = getter.getbool('build.include_system', False, doc="Include @system set in built image")
         self.baselayout_atoms = getter.getlist('build.baselayout_atoms', "sys-apps/baselayout", doc="Atoms to install to the image before any other package")
         self.outdir = getter.getstr('build.outdir', doc="Folder where the generated will be written")
-        self.forced_image_name = getter.getstr('build.image_name', doc="Force generated image name (with .tar.gz suffix)")
+        self.forced_image_name = getter.getstr('build.image_name', doc="Force generated image name (with .tar.XXX suffix)")
         self.keep_failed = getter.getbool('build.keep_failed', True, doc="Keep build environment of failed builds")
+        self.image_compression = getter.getstr('build.compression', 'gzip', doc="Compression method to use")
 
         # Emerge configuration
         self.emerge_jobs = getter.getint('emerge.jobs', doc="Parallel portage builds")
@@ -153,8 +160,19 @@ class Config:
         if os.path.exists(self.outdir) and not os.path.isdir(self.outdir):
             raise ImproperlyConfigured("build.outdir: %s is not a directory." % self.outdir)
 
-        if self.forced_image_name and not self.forced_image_name.endswith('.tar.gz'):
-            raise ImproperlyConfigured("When forcing build.image_name, it must end in .tar.gz; got %s" % self.forced_image_name)
+        if self.image_compression not in COMPRESSION_SUFFIXES:
+            raise ImproperlyConfigured(
+                "build.compression: %s is not a valid algorithm, use one of %s"
+                % (self.image_compression, ' / '.join(sorted(COMPRESSION_SUFFIXES)))
+            )
+
+        expected_suffix = '.tar.%s' % COMPRESSION_SUFFIXES[self.image_compression]
+
+        if self.forced_image_name and not self.forced_image_name.endswith(expected_suffix):
+            raise ImproperlyConfigured(
+                "When forcing build.image_name, it must end in %s; got %s"
+                % (expected_suffix, self.forced_image_name)
+            )
 
         if not self.profile:
             raise ImproperlyConfigured("build.profile is not set")
@@ -203,7 +221,11 @@ class Config:
         else:
             version = self.now.strftime('%Y-%m-%d')
 
-            return 'image-{basename}-{version}.tar.gz'.format(basename=self.profile_safe, version=version)
+            return 'image-{basename}-{version}.tar.{suffix}'.format(
+                basename=self.profile_safe,
+                version=version,
+                suffix=COMPRESSION_SUFFIXES[self.image_compression],
+            )
 
     @property
     def image_path(self):
